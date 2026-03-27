@@ -1,0 +1,14 @@
+# 1. Create the project folder
+mkdir KioskVision
+cd KioskVision
+
+# 2. Create the Virtual Environment
+python -m venv venv
+
+# 3. Activate the Environment
+# On Windows:
+.\venv\Scripts\activate
+# On Mac/Linux:
+source venv/bin/activate
+
+pip install opencv-python mediapipe==0.10.9 easyocr pyttsx3 pyautogui numpy
