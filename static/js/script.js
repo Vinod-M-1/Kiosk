@@ -1,22 +1,35 @@
-document.getElementById('captureBtn').addEventListener('click', function () {
+function captureText() {
+    const output = document.getElementById('output');
     const status = document.getElementById('status');
-    const resultDisplay = document.getElementById('resultText');
-
-    status.innerText = "Scanning...";
-
+    
+    status.innerText = "Scanning Text...";
+    
     fetch('/capture', { method: 'POST' })
         .then(response => response.json())
         .then(data => {
-            if (data.text) {
-                resultDisplay.innerText = data.text;
-                status.innerText = "Capture Successful!";
-            } else {
-                resultDisplay.innerText = "No text found.";
-                status.innerText = "Scan failed.";
-            }
+            output.innerText = data.text || "No clear text detected.";
+            status.innerText = "Text Captured!";
         })
         .catch(err => {
             console.error(err);
-            status.innerText = "Error!";
+            status.innerText = "Error Scanning";
         });
-});
+}
+
+function describeScene() {
+    const output = document.getElementById('output');
+    const status = document.getElementById('status');
+    
+    status.innerText = "AI is thinking...";
+    
+    fetch('/describe', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            output.innerText = data.summary;
+            status.innerText = "Scene Described";
+        })
+        .catch(err => {
+            console.error(err);
+            status.innerText = "AI Connection Failed";
+        });
+}
