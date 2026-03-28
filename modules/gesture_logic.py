@@ -1,38 +1,47 @@
 import time
+from enum import Enum
 
-class KioskState:
+class KioskState(Enum):
     IDLE = "IDLE"
-    ACTIVE = "ACTIVE" # 5 fingers shown
-    TARGETING = "TARGETING" # 1 finger shown
+    ACTIVE = "ACTIVE"
+    TARGETING = "TARGETING"
 
 class GestureManager:
     def __init__(self):
         self.state = KioskState.IDLE
-        self.target_word = None
         self.lock_time = 0
-        self.last_action_time = 0
-
+        self._consecutive_frames = 0
+        self._last_finger_count = -1
+        
     def update_state(self, fingers_up):
-        current_time = time.time()
-        
-        # Trigger Active Mode with 5 fingers
-        if fingers_up == 5 and self.state != KioskState.ACTIVE:
-            self.state = KioskState.ACTIVE
-            self.last_action_time = current_time
-            return "Targeting Mode Active"
-
-        # Trigger Targeting with 1 finger (Index)
-        if fingers_up == 1 and self.state == KioskState.ACTIVE:
-            self.state = KioskState.TARGETING
-            self.lock_time = current_time
-            return "Scanning point"
-
-        # Reset to IDLE if no hand for 5 seconds
-        if fingers_up == 0 and (current_time - self.last_action_time > 5):
-            self.state = KioskState.IDLE
-        
-        return None
+        # Debounce the finger input to prevent jitters
+        if fingers_up == self._last_finger_count:
+            self._consecutive_frames += 1
+        else:
+            self._consecutive_frames = 0
+            self._last_finger_count = fingers_up
+            
+        # Only change state if finger count has been stable for 10 frames (~0.3s)
+        if self._consecutive_frames >= 10:
+            if fingers_up >= 4 and self.state != KioskState.ACTIVE:
+                self.state = KioskState.ACTIVE
+                return "Targeting Mode Active"
+                
+            elif fingers_up == 1 and self.state == KioskState.ACTIVE:
+                self.state = KioskState.TARGETING
+                
+            elif fingers_up == 0 and self.state != KioskState.IDLE:
+                self.state = KioskState.IDLE
+                return "System Idle"
+                
+            # If they drop fingers down after targeting, go back to Active wait
+            elif fingers_up > 1 and fingers_up < 4 and self.state == KioskState.TARGETING:
+                self.state = KioskState.ACTIVE
+                
+        return None  # No announcement needed
 
     def is_locked(self):
-        """Checks if we are in the 4-second highlight window"""
-        return time.time() - self.lock_time < 4 if self.lock_time > 0 else False
+        # 4-Second read cooldown so the words don't repeat endlessly
+        if time.time() - self.lock_time < 4.0:
+            return True
+        return False

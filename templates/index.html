@@ -3,31 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiosk Vision AI Dashboard</title>
+    <title>Dashboard | Kiosk Vision AI</title>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Kiosk Vision AI</h1>
-            <div id="status">System Active</div>
-        </header>
-        
-        <div class="video-box">
-            <img src="/video" alt="Live AI Feed">
-        </div>
+<body class="dashboard-body">
+    <div class="app-layout">
+        <!-- Main Workspace -->
+        <div class="main-workspace">
+            <!-- Header -->
+            <header class="top-header">
+                <div class="app-title">MONITORING DASHBOARD</div>
+                <div class="system-status">
+                    <span id="hand-indicator" class="indicator"><i data-lucide="hand" stroke-width="1.5"></i> TRACKING</span>
+                    <span id="status-indicator" class="status-pill alive"><div class="dot mint-dot"></div> SYSTEM ACTIVE</span>
+                </div>
+            </header>
 
-        <div class="controls">
-            <button class="btn primary-btn" onclick="captureText()">📸 Capture Text</button>
-            <button class="btn secondary-btn" onclick="describeScene()">🌐 Describe Layout</button>
-        </div>
+            <main class="dashboard-grid">
+                <div class="main-column">
+                    <!-- Video Stream Section -->
+                    <div class="dashboard-card video-card">
+                        <div class="card-title">LIVE FEED</div>
+                        <div class="video-container">
+                            <img src="/video" alt="Live AI Feed" class="live-feed">
+                        </div>
+                    </div>
 
-        <div class="results-panel">
-            <h3>Detection Output:</h3>
-            <p id="output">Point your camera at a screen and select an option...</p>
+                    <!-- Input Controls Section -->
+                    <div class="dashboard-card action-card">
+                        <div class="card-title">COMMAND INTERFACE</div>
+                        
+                        <div class="input-container">
+                            <textarea id="goal-input" class="goal-textarea" placeholder="Dictate your intent or manually type your target here..."></textarea>
+                        </div>
+                        
+                        <div class="button-row">
+                            <button id="micBtn" class="btn flat-btn mic-btn" onclick="toggleMic()">
+                                <i data-lucide="mic" stroke-width="1.5"></i> <span id="mic-text">DICTATE</span>
+                            </button>
+                            <div id="waveform" class="waveform hidden">
+                                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                            </div>
+                            <button class="btn send-btn" onclick="sendGoal()">
+                                <i data-lucide="send" stroke-width="1.5"></i> SET GOAL
+                            </button>
+                            
+                            <div class="divider"></div>
+                            
+                            <button class="btn outline-btn" onclick="captureText()">
+                                <i data-lucide="camera" stroke-width="1.5"></i> SCAN TEXT
+                            </button>
+                            <button class="btn outline-btn" onclick="describeScene()">
+                                <i data-lucide="layout-dashboard" stroke-width="1.5"></i> ANALYZE LAYOUT
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vertical Cards Column -->
+                <div class="side-column">
+                    <!-- Status Card -->
+                    <div class="dashboard-card status-card">
+                        <div class="card-title">ACTIVE OBJECTIVE</div>
+                        
+                        <div class="objective-group">
+                            <label>USER INTENT</label>
+                            <p id="current-goal-display" class="mint-text">No task assigned.</p>
+                        </div>
+                        
+                        <div class="objective-group" style="margin-bottom:0;">
+                            <label>AI TARGET BUTTON</label>
+                            <p id="target-button-display" class="orange-text">Awaiting AI analysis...</p>
+                        </div>
+                    </div>
+
+                    <!-- AI Console Card -->
+                    <div class="dashboard-card console-card">
+                        <div class="card-title">OUTPUT CONSOLE <i data-lucide="more-horizontal" stroke-width="1.5" style="float:right; opacity:0.5;"></i></div>
+                        <div class="terminal-box">
+                            <p id="output">System initialized. Awaiting commands...</p>
+                        </div>
+                        <div class="card-footer">
+                            <span class="status-indicator"><div class="dot orange-dot"></div> Awaiting Target Log</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
     </div>
 
+    <script>
+        lucide.createIcons();
+    </script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

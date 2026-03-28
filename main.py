@@ -3,7 +3,9 @@ import time
 import pyttsx3
 import threading
 import queue
-from flask import Flask, render_template, Response, jsonify
+import winsound
+import math
+from flask import Flask, render_template, Response, jsonify, request
 from modules.hand_engine import HandEngine
 from modules.ocr_engine import OCREngine
 from modules.ai_engine import AIEngine
@@ -53,6 +55,8 @@ ocr_results = []
 latest_frame = None
 scan_lock = threading.Lock()
 global_finger_pos = None
+current_goal = None
+ai_target_text = None
 
 def init_system():
     global cap, hand_engine, ocr_engine, ai_engine
@@ -87,6 +91,10 @@ def init_system():
 # --- ROUTES ---
 
 @app.route('/')
+def landing():
+    return render_template('landing.html')
+
+@app.route('/dashboard')
 def index():
     return render_template('index.html')
 
@@ -105,17 +113,67 @@ def capture_text():
 
 @app.route('/describe', methods=['POST'])
 def describe_scene():
-    global ocr_results, latest_frame
+    global ocr_results, latest_frame, current_goal, ai_target_text
     if not ocr_results or latest_frame is None:
         return jsonify({"summary": "I can't see enough detail to describe the scene yet."})
     
     h, w, _ = latest_frame.shape
-    summary = ai_engine.analyze_layout(ocr_results, w, h)
+    summary = ai_engine.analyze_layout(ocr_results, w, h, current_goal, global_finger_pos)
     
+    instruction_to_speak = summary
+    if "TARGET:" in summary and "INSTRUCTION:" in summary:
+        lines = summary.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith("TARGET:"):
+                ai_target_text = line.replace("TARGET:", "").strip().lower()
+            elif line.startswith("INSTRUCTION:"):
+                instruction_to_speak = line.replace("INSTRUCTION:", "").strip()
+        speak_async(instruction_to_speak)
+        return jsonify({"summary": instruction_to_speak})
+
     # Speak the summary out loud
     speak_async(summary)
     
     return jsonify({"summary": summary})
+
+@app.route('/set_goal', methods=['POST'])
+def set_goal():
+    global current_goal, ocr_results, latest_frame, ai_target_text, global_finger_pos
+    data = request.get_json()
+    if data and 'goal' in data:
+        current_goal = data['goal']
+        
+        if ocr_results and latest_frame is not None:
+            h, w, _ = latest_frame.shape
+            summary = ai_engine.analyze_layout(ocr_results, w, h, current_goal, global_finger_pos)
+            
+            instruction_to_speak = summary
+            if "TARGET:" in summary and "INSTRUCTION:" in summary:
+                lines = summary.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    if line.startswith("TARGET:"):
+                        ai_target_text = line.replace("TARGET:", "").strip().lower()
+                    elif line.startswith("INSTRUCTION:"):
+                        instruction_to_speak = line.replace("INSTRUCTION:", "").strip()
+                speak_async(instruction_to_speak)
+                return jsonify({"status": "success", "goal": current_goal, "summary": instruction_to_speak})
+            
+            speak_async(summary)
+            return jsonify({"status": "success", "goal": current_goal, "summary": summary})
+            
+        return jsonify({"status": "success", "goal": current_goal})
+    return jsonify({"status": "error"})
+
+@app.route('/status', methods=['GET'])
+def get_status():
+    global current_goal, global_finger_pos, ai_target_text
+    return jsonify({
+        "current_goal": current_goal if current_goal else "No task assigned.",
+        "target_button": ai_target_text.capitalize() if ai_target_text else "Awaiting AI...",
+        "hand_detected": global_finger_pos is not None
+    })
 
 def generate_frames():
     global latest_frame, global_finger_pos, last_spoken_fingers
@@ -123,6 +181,8 @@ def generate_frames():
     # Track when we last spoke a word to prevent overlapping audio
     last_word_spoken = ""
     word_lock_time = 0 
+    last_tick_time = 0 # Track last geiger ping
+
 
     while True:
         if cap is None:
@@ -155,6 +215,11 @@ def generate_frames():
                 frame, hand_data["landmarks"], hand_engine.mp_hands.HAND_CONNECTIONS
             )
 
+        # Pulse circle at finger pos
+        if global_finger_pos:
+            pulse_radius = 15 + int(5 * math.sin(time.time() * 10))
+            cv2.circle(frame, global_finger_pos, pulse_radius, (0, 255, 0), 3)
+
         # 3. Handle OCR Results & Visual Feedback
         with scan_lock:
             current_ocr = ocr_results.copy()
@@ -168,34 +233,56 @@ def generate_frames():
                 pts = [tuple(map(int, p)) for p in bbox]
                 tl, br = pts[0], pts[2]
                 
-                # Calculate Circle center and radius
-                center = ((tl[0] + br[0]) // 2, (tl[1] + br[1]) // 2)
-                radius = (br[0] - tl[0]) // 2 + 15
+                # Check if this box is the AI target
+                is_ai_target = False
+                if ai_target_text and ai_target_text in text.lower():
+                    is_ai_target = True
+
+                # Default appearance (Visible, bright blue box)
+                color = (255, 200, 0) # Bright cyan-blue
+                thickness = 2
                 
-                # Default appearance (Thin blue box when in Active mode)
-                color = (255, 0, 0)
-                thickness = 1
+                if is_ai_target:
+                    color = (255, 0, 255) # Magenta for the target area
+                    thickness = 4
 
                 # CHECK COLLISION: Is the index finger pointing at this text?
                 is_pointing = False
                 if global_finger_pos:
                     if tl[0] < global_finger_pos[0] < br[0] and tl[1] < global_finger_pos[1] < br[1]:
                         is_pointing = True
+                        if not is_ai_target:
+                            color = (0, 200, 255) # Yellow/Orange highlight when pointing
+                            
+                    # Geiger Counter Logic for AI Target Tracking
+                    if is_ai_target:
+                        center = ((tl[0] + br[0]) // 2, (tl[1] + br[1]) // 2)
+                        dist = math.hypot(global_finger_pos[0] - center[0], global_finger_pos[1] - center[1])
+                        
+                        # Throttle ping intervals by distance (max interval ~0.8s, min ~0.08s)
+                        interval = max(0.08, dist / 700.0)
+                        
+                        # Avoid playing rapid ticks if user is actively pointing/succeeding
+                        if not (is_pointing and gesture_mgr.state != KioskState.IDLE):
+                            if current_time - last_tick_time > interval:
+                                winsound.PlaySound("static/assets/tick.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
+                                last_tick_time = current_time
+
+                # ALWAYS draw the text boxes so you can see what is recognized
+                cv2.rectangle(frame, tl, br, color, thickness)
 
                 # LOGIC GATE: Only target if Mode is ACTIVE/TARGETING and pointing
                 if gesture_mgr.state != KioskState.IDLE:
                     if is_pointing and fingers_up == 1:
-                        # VISUAL FEEDBACK: Draw a thick Green Circle
-                        cv2.circle(frame, center, radius, (0, 255, 0), 3)
-                        
                         # VOICE FEEDBACK: Only speak if not locked (4-second cooldown)
                         if not gesture_mgr.is_locked() or text != last_word_spoken:
+                            if is_ai_target:
+                                winsound.PlaySound("static/assets/success.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
+                            else:
+                                winsound.PlaySound("static/assets/beep.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
                             speak_async(text)
                             last_word_spoken = text
                             gesture_mgr.lock_time = current_time # Reset the 4s timer
-                    else:
-                        # Just show thin boxes to indicate the system is "listening"
-                        cv2.rectangle(frame, tl, br, color, thickness)
 
         # UI Overlay for the User
         state_color = (0, 255, 0) if gesture_mgr.state != KioskState.IDLE else (0, 0, 255)
