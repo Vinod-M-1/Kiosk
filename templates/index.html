@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiosk Vision Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Kiosk Vision AI</h1>
+            <p>Accessibility Dashboard</p>
+        </header>
+
+        <div class="video-container">
+            <img src="/video" alt="Live AI Stream">
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="captureBtn">📸 Capture Screen Text</button>
+            <div id="status">System Ready</div>
+        </div>
+
+        <div class="results-panel">
+            <h3>Latest Detection:</h3>
+            <p id="resultText">No text captured yet...</p>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>
