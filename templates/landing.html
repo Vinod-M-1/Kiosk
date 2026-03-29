@@ -3,87 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiosk Vision AI</title>
+    <title>Kiosk Vision AI | Spatial Perception</title>
     <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Spline 3D Viewer -->
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.32/build/spline-viewer.js"></script>
 </head>
 <body class="landing-body">
-    <div class="app-layout">
-        <!-- Main Workspace -->
-        <div class="main-workspace">
-            <!-- Header -->
-            <header class="top-header">
-                <div class="app-title">KIOSK VISION</div>
-                <div class="header-actions">
-                    <span class="user-profile">Guest Profile <i data-lucide="chevron-down" stroke-width="1.5"></i></span>
-                </div>
-            </header>
+    
+    <!-- 3D Interactive Spline Background -->
+    <div class="spline-container">
+        <!-- A sleek, dark interactive particle/wave 3D animation -->
+        <spline-viewer url="https://prod.spline.design/gA26p-uK62-X42l2/scene.splinecode"></spline-viewer>
+    </div>
 
-            <main class="landing-content">
-                <div class="hero-header">
-                    <h2>A UNIVERSAL INCLUSIVE<br>KIOSK ASSISTANT</h2>
-                    <p class="subtitle">Translating inaccessible digital interfaces into a real-time, tactile spatial map using Advanced Computer Vision and Gemini AI.</p>
-                    <a href="/dashboard" class="btn flat-btn large-btn">
-                        LAUNCH DASHBOARD
-                    </a>
-                </div>
+    <!-- UI Overlay on top of the 3D canvas -->
+    <div class="landing-overlay">
+        <!-- Header -->
+        <header class="top-header glass-header">
+            <div class="app-title">
+                <i data-lucide="eye" stroke-width="2" class="title-icon"></i>
+                KIOSK VISION
+            </div>
+            <div class="header-actions">
+                <a href="/dashboard" class="nav-link">System Status</a>
+                <span class="user-profile glow-border">Guest Profile <i data-lucide="chevron-down" stroke-width="1.5"></i></span>
+            </div>
+        </header>
 
-                <!-- Process Timeline -->
-                <div class="timeline-card">
-                    <div class="card-title">PROJECT TIMELINE: SPATIAL MAPPING</div>
+        <main class="landing-content">
+            <!-- Hero Section -->
+            <section class="landing-hero">
+                <div class="hero-badge glass">
+                    <span class="pulse-dot"></span> Next-Gen Accessibility
+                </div>
+                <h1>SPATIAL MAPPING<br>FOR <span class="glow-text">EVERYONE.</span></h1>
+                <p>Translating inaccessible digital interfaces into a real-time, tactile spatial map using Advanced Computer Vision and local AI.</p>
+                <a href="/dashboard" class="launch-btn glass-btn-hover">
+                    LAUNCH DASHBOARD <i data-lucide="arrow-right" stroke-width="2"></i>
+                </a>
+            </section>
+
+            <!-- Info Grid -->
+            <section class="landing-grid">
+                
+                <!-- Process Timeline (Glassmorphism) -->
+                <div class="timeline-card glass">
+                    <div class="card-title mint-text"><i data-lucide="cpu" stroke-width="2"></i> THE PERCEPTION PIPELINE</div>
                     <div class="timeline-container">
                         <div class="timeline-step">
-                            <div class="timeline-node mint-node"><i data-lucide="camera" stroke-width="1.5"></i></div>
-                            <div class="timeline-label">SEE</div>
+                            <div class="timeline-node glass-node"><i data-lucide="camera" stroke-width="1.5"></i></div>
+                            <div class="timeline-label text-glow">SEE</div>
                         </div>
-                        <div class="timeline-line"></div>
+                        <div class="timeline-line glass-line"></div>
                         <div class="timeline-step">
-                            <div class="timeline-node orange-node"><i data-lucide="hand" stroke-width="1.5"></i></div>
+                            <div class="timeline-node glass-node orange-tint"><i data-lucide="hand" stroke-width="1.5"></i></div>
                             <div class="timeline-label">TRACK</div>
                         </div>
-                        <div class="timeline-line"></div>
+                        <div class="timeline-line glass-line"></div>
                         <div class="timeline-step">
-                            <div class="timeline-node mint-node"><i data-lucide="map" stroke-width="1.5"></i></div>
-                            <div class="timeline-label">MAP</div>
+                            <div class="timeline-node glass-node"><i data-lucide="map" stroke-width="1.5"></i></div>
+                            <div class="timeline-label text-glow">MAP</div>
                         </div>
-                        <div class="timeline-line"></div>
+                        <div class="timeline-line glass-line"></div>
                         <div class="timeline-step">
-                            <div class="timeline-node orange-node"><i data-lucide="brain-circuit" stroke-width="1.5"></i></div>
+                            <div class="timeline-node glass-node orange-tint"><i data-lucide="brain-circuit" stroke-width="1.5"></i></div>
                             <div class="timeline-label">UNDERSTAND</div>
                         </div>
-                        <div class="timeline-line"></div>
+                        <div class="timeline-line glass-line"></div>
                         <div class="timeline-step">
-                            <div class="timeline-node mint-node"><i data-lucide="volume-2" stroke-width="1.5"></i></div>
-                            <div class="timeline-label">GUIDE</div>
+                            <div class="timeline-node glass-node"><i data-lucide="volume-2" stroke-width="1.5"></i></div>
+                            <div class="timeline-label text-glow">GUIDE</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Contrast Boxes -->
+                <!-- HOW IT WORKS: 3-Step Brief -->
+                <div class="feature-brief" style="display: flex; gap: 2rem; margin: 2rem 0;">
+                    <div class="glass" style="flex: 1; padding: 2.5rem; border-radius: 16px;">
+                        <div class="glow-text" style="font-size: 2rem; font-weight: 900; margin-bottom: 1rem;">01</div>
+                        <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: #fff;">VISUAL PERCEPTION</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem;">Capturing the screen dynamically via the Iriun/OpenCV hardware pipeline with a lag-free 30FPS stream.</p>
+                    </div>
+                    
+                    <div class="glass" style="flex: 1; padding: 2.5rem; border-radius: 16px;">
+                        <div class="glow-text" style="font-size: 2rem; font-weight: 900; margin-bottom: 1rem;">02</div>
+                        <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: #fff;">SPATIAL REASONING</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem;">Leveraging MediaPipe for skeletal hand tracking while employing advanced OCR to continuously map onscreen text bounding boxes.</p>
+                    </div>
+
+                    <div class="glass" style="flex: 1; padding: 2.5rem; border-radius: 16px;">
+                        <div class="glow-text" style="font-size: 2rem; font-weight: 900; margin-bottom: 1rem;">03</div>
+                        <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: #fff;">TACTILE GUIDANCE</h4>
+                        <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem;">Translating geometric data into a direct "Geiger-counter" style audio-tactile radar to safely guide visually impaired users.</p>
+                    </div>
+                </div>
+
+                <!-- Contrast Modules -->
                 <div class="contrast-grid">
-                    <div class="contrast-card">
+                    <div class="contrast-card glass">
                         <div class="tag legacy-tag"><div class="dot orange-dot"></div> LEGACY</div>
                         <h3>STATIC KIOSKS</h3>
-                        <p>Standard touchscreens offer zero physical feedback, failing visually impaired users who rely on tactile awareness.</p>
+                        <p>Standard touchscreens offer zero physical feedback, failing visually impaired users who rely on tactile awareness and spatial context.</p>
                         <div class="card-footer">
                             <span class="status-indicator"><i data-lucide="alert-circle" stroke-width="1.5"></i> Inaccessible</span>
                         </div>
                     </div>
                     
-                    <div class="contrast-card">
+                    <div class="contrast-card glass">
                         <div class="tag modern-tag"><div class="dot mint-dot"></div> AI-DRIVEN</div>
                         <h3>SPATIAL AI</h3>
-                        <p>Dynamically pairing Gemini reasoning with MediaPipe to act as a physical geiger-counter, securely routing your hand.</p>
+                        <p>Dynamically pairing deep-learning reasoning with MediaPipe geometry to act as a physical geiger-counter, securely routing your hand.</p>
                         <div class="card-footer">
                             <span class="status-indicator mint-text"><i data-lucide="check-circle" stroke-width="1.5"></i> Inclusive</span>
                         </div>
                     </div>
                 </div>
-            </main>
-        </div>
+
+            </section>
+        </main>
     </div>
 
     <script>

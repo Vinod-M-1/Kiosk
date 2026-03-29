@@ -23,23 +23,36 @@ ai_engine = None
 voice_queue = queue.Queue()
 
 def voice_worker():
-    # We initialize inside the loop or keep it very simple to prevent hangs
+    import pyttsx3
+    import pythoncom
+    
+    # REQUIRED on Windows when running in a worker thread alongside HuggingFace/Torch 
+    # to prevent the COM library from silently freezing the TTS audio stream.
+    pythoncom.CoInitialize()
+    
+    try:
+        # Initializing the TTS engine ONCE outside the loop cuts out the 500ms+ startup latency per-word!
+        engine = pyttsx3.init()
+        engine.setProperty('rate', 180)
+    except Exception as e:
+        print(f"Failed to initialize TTS: {e}")
+        return
+
     while True:
         text = voice_queue.get()
         if text is None: break
         try:
-            # Re-initializing inside the worker is often safer for background threads
-            engine = pyttsx3.init()
-            engine.setProperty('rate', 180)
             engine.say(text)
             engine.runAndWait()
-            # Explicitly stop the engine to release the audio driver
-            engine.stop()
-            del engine 
         except Exception as e:
             print(f"Voice Error: {e}")
         finally:
             voice_queue.task_done()
+    
+    try:
+        engine.stop()
+    except:
+        pass
 
 threading.Thread(target=voice_worker, daemon=True).start()
 
@@ -48,7 +61,10 @@ last_spoken_fingers = -1
 finger_words = {1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five"}
 
 def speak_async(text):
-    voice_queue.put(text)
+    if text:
+        # SAPI5 will silently crash if fed XML-breaking characters
+        safe_text = text.replace('&', 'and').replace('@', 'at').replace('<', 'less than').replace('>', 'greater than')
+        voice_queue.put(safe_text)
 
 # State Management
 ocr_results = []
@@ -58,12 +74,78 @@ global_finger_pos = None
 current_goal = None
 ai_target_text = None
 
+def find_active_camera():
+    import cv2
+    import time
+    import numpy as np
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    
+    # 1. Manual Override from .env
+    override_idx = os.getenv("CAMERA_INDEX")
+    if override_idx is not None:
+        try:
+            cam_idx = int(override_idx)
+            print(f"FORCING CAMERA INDEX: {cam_idx} (from .env)")
+            # Try capturing with directshow
+            cap = cv2.VideoCapture(cam_idx, cv2.CAP_DSHOW)
+            if cap.isOpened():
+                return cap
+            # Fallback to default if DSHOW fails for this custom index
+            cap = cv2.VideoCapture(cam_idx)
+            if cap.isOpened():
+                return cap
+        except ValueError:
+            pass
+
+    print("Auto-detecting active camera...")
+    best_cap = None
+    max_diff = -1
+    
+    # Try all reasonable camera indices
+    for idx in range(3):
+        cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
+        if not cap.isOpened():
+            continue
+            
+        # Read a few frames to let the virtual camera warm up
+        for _ in range(5):
+            cap.read()
+            
+        ret1, f1 = cap.read()
+        time.sleep(0.1)
+        ret2, f2 = cap.read()
+        
+        if ret1 and ret2 and f1 is not None and f2 is not None:
+            # A real camera will have sensor noise causing a larger diff
+            # Static virtual camera placeholders have very little to no noise
+            diff = np.sum(cv2.absdiff(f1, f2))
+            
+            if diff > max_diff:
+                max_diff = diff
+                if best_cap is not None:
+                    best_cap.release()
+                best_cap = cap
+            else:
+                cap.release()
+        else:
+            cap.release()
+            
+    if best_cap is not None and max_diff > 200000:
+        return best_cap
+        
+    # Fallback to index 0 if none pass the check
+    if best_cap:
+        best_cap.release()
+        
+    return cv2.VideoCapture(0, cv2.CAP_DSHOW)
+
 def init_system():
     global cap, hand_engine, ocr_engine, ai_engine
     if cap is None:
-        # 1 for Iriun (USB/WiFi), 0 for default webcam
-        cap = cv2.VideoCapture(1) 
-        if not cap.isOpened(): cap = cv2.VideoCapture(0)
+        cap = find_active_camera()
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         
         hand_engine = HandEngine()
@@ -253,23 +335,34 @@ def generate_frames():
                         is_pointing = True
                         if not is_ai_target:
                             color = (0, 200, 255) # Yellow/Orange highlight when pointing
-                            
-                    # Geiger Counter Logic for AI Target Tracking
-                    if is_ai_target:
-                        center = ((tl[0] + br[0]) // 2, (tl[1] + br[1]) // 2)
-                        dist = math.hypot(global_finger_pos[0] - center[0], global_finger_pos[1] - center[1])
-                        
-                        # Throttle ping intervals by distance (max interval ~0.8s, min ~0.08s)
-                        interval = max(0.08, dist / 700.0)
-                        
-                        # Avoid playing rapid ticks if user is actively pointing/succeeding
-                        if not (is_pointing and gesture_mgr.state != KioskState.IDLE):
-                            if current_time - last_tick_time > interval:
-                                winsound.PlaySound("static/assets/tick.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
-                                last_tick_time = current_time
+
+                # ── GEIGER COUNTER (independent of verbal radar) ──────────
+                if is_ai_target and global_finger_pos:
+                    center = ((tl[0] + br[0]) // 2, (tl[1] + br[1]) // 2)
+                    dist = math.hypot(global_finger_pos[0] - center[0], global_finger_pos[1] - center[1])
+                    interval = max(0.08, dist / 700.0)
+                    if not (is_pointing and gesture_mgr.state != KioskState.IDLE):
+                        if current_time - last_tick_time > interval:
+                            winsound.PlaySound("static/assets/tick.wav", winsound.SND_FILENAME | winsound.SND_ASYNC)
+                            last_tick_time = current_time
+
+                # ── VERBAL RADAR (completely independent — always fires) ───
+                if is_ai_target:
+                    last_guide = getattr(gesture_mgr, 'last_verbal_guide', 0)
+                    no_hand = global_finger_pos is None
+                    # Repeat location cue every 8s when hand not in frame; directional cue every 4s when hand visible
+                    guide_interval = 8.0 if no_hand else 4.0
+
+                    if current_time - last_guide > guide_interval:
+                        direction = ai_engine._get_directional_instruction(
+                            global_finger_pos, bbox, ai_target_text, frame.shape[1], frame.shape[0]
+                        )
+                        speak_async(direction)
+                        gesture_mgr.last_verbal_guide = current_time
 
                 # ALWAYS draw the text boxes so you can see what is recognized
                 cv2.rectangle(frame, tl, br, color, thickness)
+
 
                 # LOGIC GATE: Only target if Mode is ACTIVE/TARGETING and pointing
                 if gesture_mgr.state != KioskState.IDLE:

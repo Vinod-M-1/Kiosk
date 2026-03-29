@@ -11,4 +11,4 @@ python -m venv venv
 # On Mac/Linux:
 source venv/bin/activate
 
-pip install opencv-python mediapipe==0.10.9 easyocr pyttsx3 pyautogui numpy
+pip install opencv-python mediapipe==0.10.9 easyocr pyttsx3 pyautogui numpy transformers torch

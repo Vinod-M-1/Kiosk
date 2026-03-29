@@ -3,42 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Kiosk Vision AI</title>
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
+    <title>AI Dashboard | Spatial Control</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="dashboard-body">
+    <!-- Ambient glowing background -->
+    <div class="ambient-glow"></div>
+
     <div class="app-layout">
-        <!-- Main Workspace -->
-        <div class="main-workspace">
+        <div class="main-workspace dashboard-workspace">
+            
             <!-- Header -->
-            <header class="top-header">
-                <div class="app-title">MONITORING DASHBOARD</div>
+            <header class="top-header glass-header dashboard-header">
+                <div class="app-title glow-text">
+                    <i data-lucide="eye" stroke-width="2"></i>
+                    SPATIAL DASHBOARD
+                </div>
                 <div class="system-status">
-                    <span id="hand-indicator" class="indicator"><i data-lucide="hand" stroke-width="1.5"></i> TRACKING</span>
-                    <span id="status-indicator" class="status-pill alive"><div class="dot mint-dot"></div> SYSTEM ACTIVE</span>
+                    <span id="hand-indicator" class="indicator"><i data-lucide="hand" stroke-width="2"></i> TRACKING</span>
+                    <span id="status-indicator" class="status-pill alive glass"><div class="dot mint-dot"></div> SYSTEM ACTIVE</span>
                 </div>
             </header>
 
             <main class="dashboard-grid">
+                
+                <!-- Main Control Column -->
                 <div class="main-column">
-                    <!-- Video Stream Section -->
-                    <div class="dashboard-card video-card">
-                        <div class="card-title">LIVE FEED</div>
-                        <div class="video-container">
+                    
+                    <!-- Advanced Viewfinder Video Feed -->
+                    <div class="video-section">
+                        <div class="card-title mint-text glass-badge"><i data-lucide="video" stroke-width="2"></i> LIVE AI PERCEPTION</div>
+                        <div class="video-container glass" id="video-feed-container">
+                            <!-- Viewfinder Crop Marks -->
+                            <div class="crop-mark tl"></div>
+                            <div class="crop-mark tr"></div>
+                            <div class="crop-mark bl"></div>
+                            <div class="crop-mark br"></div>
+                            <!-- Center Crosshair -->
+                            <div class="crosshair"></div>
+                            
                             <img src="/video" alt="Live AI Feed" class="live-feed">
                         </div>
                     </div>
 
-                    <!-- Input Controls Section -->
-                    <div class="dashboard-card action-card">
-                        <div class="card-title">COMMAND INTERFACE</div>
+                    <!-- Command Interface -->
+                    <div class="action-card glass">
+                        <div class="card-title text-glow"><i data-lucide="terminal" stroke-width="2"></i> COMMAND INTERFACE</div>
                         
                         <div class="input-container">
-                            <textarea id="goal-input" class="goal-textarea" placeholder="Dictate your intent or manually type your target here..."></textarea>
+                            <textarea id="goal-input" class="goal-textarea glass-input" placeholder="Initiate Target Lock... Dictate your intent or manual override..."></textarea>
                         </div>
                         
                         <div class="button-row">
@@ -48,47 +63,53 @@
                             <div id="waveform" class="waveform hidden">
                                 <div class="bar"></div><div class="bar"></div><div class="bar"></div>
                             </div>
-                            <button class="btn send-btn" onclick="sendGoal()">
-                                <i data-lucide="send" stroke-width="1.5"></i> SET GOAL
+                            <!-- Glowing Send Button -->
+                            <button class="btn send-btn launch-btn glow-hover" onclick="sendGoal()">
+                                <i data-lucide="target" stroke-width="2"></i> SET GOAL
                             </button>
                             
                             <div class="divider"></div>
                             
-                            <button class="btn outline-btn" onclick="captureText()">
-                                <i data-lucide="camera" stroke-width="1.5"></i> SCAN TEXT
+                            <button class="btn outline-btn glass-btn" onclick="captureText()">
+                                <i data-lucide="scan-line" stroke-width="1.5"></i> SCAN TEXT
                             </button>
-                            <button class="btn outline-btn" onclick="describeScene()">
-                                <i data-lucide="layout-dashboard" stroke-width="1.5"></i> ANALYZE LAYOUT
+                            <button class="btn outline-btn glass-btn" onclick="describeScene()">
+                                <i data-lucide="layout-template" stroke-width="1.5"></i> ANALYZE LAYOUT
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Vertical Cards Column -->
+                <!-- Auxiliary Data Column -->
                 <div class="side-column">
-                    <!-- Status Card -->
-                    <div class="dashboard-card status-card">
-                        <div class="card-title">ACTIVE OBJECTIVE</div>
+                    
+                    <!-- Objective Card -->
+                    <div class="status-card glass">
+                        <div class="card-title text-glow"><i data-lucide="crosshairs" stroke-width="2"></i> ACTIVE OBJECTIVE</div>
                         
                         <div class="objective-group">
                             <label>USER INTENT</label>
-                            <p id="current-goal-display" class="mint-text">No task assigned.</p>
+                            <p id="current-goal-display" class="mint-text bold-value">AWAITING OBJECTIVE</p>
                         </div>
                         
                         <div class="objective-group" style="margin-bottom:0;">
-                            <label>AI TARGET BUTTON</label>
-                            <p id="target-button-display" class="orange-text">Awaiting AI analysis...</p>
+                            <label>AI TARGET LOCK</label>
+                            <div class="target-badge">
+                                <p id="target-button-display" class="orange-text bold-value">Scanning parameters...</p>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- AI Console Card -->
-                    <div class="dashboard-card console-card">
-                        <div class="card-title">OUTPUT CONSOLE <i data-lucide="more-horizontal" stroke-width="1.5" style="float:right; opacity:0.5;"></i></div>
-                        <div class="terminal-box">
-                            <p id="output">System initialized. Awaiting commands...</p>
+                    <!-- Output Console Terminal -->
+                    <div class="console-card glass terminal-card">
+                        <div class="card-title terminal-title">
+                            LOG STREAM <div class="blinking-cursor"></div>
                         </div>
-                        <div class="card-footer">
-                            <span class="status-indicator"><div class="dot orange-dot"></div> Awaiting Target Log</span>
+                        <div class="terminal-box scanline-effect">
+                            <p id="output">System Initialized. Awaiting directives...</p>
+                        </div>
+                        <div class="card-footer terminal-footer">
+                            <span class="status-indicator"><div class="dot orange-dot pulse-dot"></div> AI Engine Online</span>
                         </div>
                     </div>
                 </div>
@@ -98,6 +119,24 @@
 
     <script>
         lucide.createIcons();
+        
+        // Enhance status polling to update video border color dynamically
+        const originalUpdateStatus = window.updateStatusDisplay;
+        if(originalUpdateStatus) {
+            setInterval(() => {
+                const handIndicator = document.getElementById('hand-indicator');
+                const videoFeed = document.getElementById('video-feed-container');
+                if (handIndicator && videoFeed) {
+                    if (handIndicator.classList.contains('active')) {
+                        videoFeed.style.borderColor = 'var(--mint-green)';
+                        videoFeed.style.boxShadow = '0 0 30px rgba(184, 243, 151, 0.2), inset 0 0 20px rgba(184, 243, 151, 0.1)';
+                    } else {
+                        videoFeed.style.borderColor = 'var(--warning-orange)';
+                        videoFeed.style.boxShadow = '0 0 30px rgba(246, 166, 77, 0.2), inset 0 0 20px rgba(246, 166, 77, 0.1)';
+                    }
+                }
+            }, 500);
+        }
     </script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>

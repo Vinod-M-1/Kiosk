@@ -1,2 +1,75 @@
-venv
+# ==============================================
+# KIOSK VISION — .gitignore
+# ==============================================
+
+# --- Python Virtual Environment ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Python Cache & Compiled Files ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+
+# --- Environment / Secrets ---
 .env
+.env.local
+.env.*.local
+
+# --- Large Binary / Wheel Files (DO NOT COMMIT) ---
+# The torch .whl is ~2.8GB — git will refuse to push this
+*.whl
+*.egg
+*.egg-info/
+dist/
+build/
+
+# --- HuggingFace / Torch Model Cache ---
+# These are downloaded automatically on first run
+.cache/
+~/.cache/huggingface/
+torch_cache/
+
+# --- EasyOCR / MediaPipe model downloads ---
+# Auto-downloaded to user home; don't commit
+*.pt
+*.onnx
+*.tflite
+
+# --- Test Output Files ---
+test_cams_output.txt
+*.log
+*.out
+
+# --- IDE / Editor Configs ---
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# --- Flask session / instance data ---
+instance/
+flask_session/
+
+# --- Any accidental large media captures ---
+*.avi
+*.mp4
+*.mov
+*.mkv
+capture_*.jpg
+frame_*.jpg
+frame_*.png
